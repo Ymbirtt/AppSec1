@@ -1,0 +1,15 @@
+\begin{figure}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+{\bf Group Member} & {\bf Contribution Outline} & {\bf Contribution \%} \\
+\hline
+tj0824 & Did some stuff & Probably 50\% \\
+dogilvie or whatever & Did some other stuff & Probably also 50 \% \\
+\hline
+\end{tabular}
+\end{figure}
+
+Together, we have exploted a pair of security issues in some very poorly written programs. Being experienced in various security exploits, we decided to both attempt each task independently, resulting in subtly different attacks, which can then be compared and contrasted for their various features. We took subtly different approaches to the first attack on format strings; Tim's relied on the fact that the program allowed the user to input a number before writing the string, which resulted in an attack that remains valid even if the buffer is located on the heap, whilst Drum built an attack which requires only that the string be stored on the stack, with no reliance on the first input. Both attacks were automated for our own convenience.
+
+For the second attack, \red{we both did some things that we've not compared yet}

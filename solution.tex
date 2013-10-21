@@ -1,0 +1,31 @@
+\subsection{Attack 1, the Format String Vulnerability}
+
+The {\tt printf, fprintf, sprintf}, etc functions in the standard C IO library are all vulnerable to format string based attacks, which exploit the manner in which C handles function calls. When a function is called in the C programming language, 
+%http://www.csee.umbc.edu/~chang/cs313.s02/stack.shtml - note the difference in stack architectures, our VMs are slightly different from this situation
+the exact actions are dependent on the specific processor architecture, compiler and operating system of the platform, but in the case of this machine, the situation is similar to that depicted in figure \ref{fig_stack}. When a function is called, the return address is pushed onto the stack first at the highest memory address, followed by the function's arguments in reverse order at decreasing memory addresses, so the first argument resides at the top of the stack, at the lowest memory address, and all arguments sit below it, at higher memory addresses. The base pointer, stored in register {\tt EBP}, then points to a location above this on the stack, defining the start of the function's local address space. When a function requires a argument, it simply pulls values off the stack at some distance below the stack's base pointer.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width = 0.5\textwidth]{./images/placeholder.jpg}
+\caption{OH GOD I LOVE BEING A SAMPLE IMAGE}
+\label{fig_stack}
+\end{figure}
+
+When all this is pushed onto the stack, it is pushed above the stack space belonging to the calling function. If a function has only 3 arguments, and I attempt to access the 10th argument, I'll start reading bits of memory belonging to the calling function. In most cases this isn't an issue. When a function is defined {\tt void fun(arg1, arg2, arg3)}, attempting to access {\tt arg10} results in an unsurprising parse error, and a program with a line such as {\tt foo = *(\&arg1 - 9*sizeof(int))} is fairly obviously doing something that it shouldn't.
+
+Format strings are a different story however. The intended use is for a developer to write soomething like {\tt printf("\%x", x)} to print the value of the variable {\tt x} interpreted as a hexadecimal integer, however {\tt printf} does not have a fixed number of arguments. This leads to some hilarious bugs. {\tt printf("\%x \%x \%x")} will print out the values of whatever is stored at the memory locations where the $2^{nd}$, $3^{rd}$ and $4^{th}$ arguments to printf should be if they existed, without checking whether they exist or not. With enough format specifiers, we can start reading memory from the stack frame belonging to the calling function. The {\tt \%s} format specifier interprets an ``argument" as a pointer to a null-terminated ASCII string, and prints out its contents. If, then, we call {\tt printf("\%s\%s...\%s")}, the program will tear values from the stack, interpret them as memory addresses, attempt to dereference them, and probably eventually segfault when it hits a memory address it doesn't have access to. The {\tt \%n} format string interprets the relevant ``argument" as a memory address, and writes the number of characters written thus far to that address. {\tt printf("\%n\%n...\%n")} will tear addresses from the stack, dereference them, and set them all to 0, eventually segfaulting when it hits an invalid address.
+
+Tim's attack used the fact that {\tt vul\_prog} asks the user to input a decimal integer before entering a string. This integer is stored near the top of the stack, as shown in figure \ref{fig_vul_prog_stack}. The addresses of both secrets are printed by the program, so this address can be read, converted to a decimal integer, then planted on the stack at a predictable location. This location, is where the ninth argument to printf should be, so the line {\tt printf("\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%n")} will dig eight words from the stack to the integer input by the user, then set the value at that memory address to 64 = 0x40. Higher values can then be achieved by padding the string with more periods before the {\tt \%n}.
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[width = 0.5\textwidth]{./images/placeholder.jpg}
+\caption{OH GOD I LOVE BEING A SAMPLE IMAGE}
+\label{fig_vul_prog_stack}
+\end{figure}
+
+
+\red{Drum's attack is very different in lots of important ways}
+
+Setting the address to large values like {\tt 0xd09f00d} can be very difficult, unfortunately, since this requires an exceptionally long string, but allowing users to rewrite arbitrary sections of a program's memory in any way is usually a very bad idea indeed.
