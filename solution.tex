@@ -6,12 +6,7 @@ functions}\cite{vfunc}. When a function is called in the C programming language,
 %http://www.csee.umbc.edu/~chang/cs313.s02/stack.shtml - note the difference in stack architectures, our VMs are
 %slightly different from this situation the exact actions are dependent on the specific processor architecture, compiler
 and operating system of the platform; in the case of this machine, the situation is similar to that depicted in figure
-\ref{fig_stack}. When a function is called, the return address is pushed onto the stack first at the highest memory
-address, followed by the function's arguments in reverse order at decreasing memory addresses. The first argument
-resides at the top of the stack, at the lowest memory address, and all arguments sit below it, at higher memory
-addresses. The base pointer, stored in register {\tt EBP}, then points to a location above this on the stack, defining
-the start of the function's local address space. When a function requires a argument, it simply pulls values off the
-stack at some distance below the stack's base pointer.
+\ref{fig_stack}. 
 
 \begin{figure}[ht]     \centering     \includegraphics[width = 0.5\textwidth]{./images/placeholder.jpg}     \caption{OH
 GOD I LOVE BEING A SAMPLE IMAGE}     \label{fig_stack} \end{figure}
