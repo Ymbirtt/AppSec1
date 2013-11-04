@@ -5,21 +5,14 @@ attacks, which exploit the manner in which C handles calls to the class of funct
 functions}\cite{vfunc}. When a function is called in the C programming language,
 %http://www.csee.umbc.edu/~chang/cs313.s02/stack.shtml - note the difference in stack architectures, our VMs are
 %slightly different from this situation the exact actions are dependent on the specific processor architecture, compiler
-and operating system of the platform; in the case of this machine, the situation is similar to that depicted in figure
-\ref{fig_stack}. 
+in the case of this machine, the situation is similar to that depicted in figure \ref{fig_stack}. 
 
-\begin{figure}[ht]     \centering     \includegraphics[width = 0.5\textwidth]{./images/placeholder.jpg}     \caption{OH
-GOD I LOVE BEING A SAMPLE IMAGE}     \label{fig_stack} \end{figure}
+\begin{figure}[ht]     \centering     \includegraphics[width = 0.65\textwidth]{./images/stack.jpg}     \caption{OH
+GOD I LOVE BEING A STACK}     \label{fig_stack} \end{figure}
 
-When all of this is pushed onto the stack, it is pushed above the stack space belonging to the calling function. If a
-function has only 3 arguments, and I attempt to access the 10th argument, I'll start reading bits of memory belonging to
-the calling function. In most cases this isn't an issue. When a function is defined {\tt void fun(arg1, arg2, arg3)},
-attempting to access {\tt arg10} results in an unsurprising parse error, and lines such as {\tt foo = *(\&arg1 -
-9*sizeof(int))} can be detected at compile time and caught.
-
-Format strings are a different story however; The intended use is for a developer to write something like {\tt
+Format strings are useful, but can be dangerous; The intended use is for a developer to write something like {\tt
 printf("\%x", x)} to print the value of the variable {\tt x} interpreted as a hexadecimal integer, however {\tt printf}
-does not have a fixed number of arguments. This leads to some hilarious bugs. {\tt printf("\%x \%x \%x")} will print out
+does not have a fixed number of arguments. {\tt printf("\%x \%x \%x")} will print out
 the values of whatever is stored at the memory locations where the $2^{nd}$, $3^{rd}$ and $4^{th}$ arguments to printf
 should be if they existed, without checking whether they exist or not. With enough format specifiers, we can start
 reading memory from the stack frame belonging to the calling function. The {\tt \%s} format specifier interprets an
@@ -46,7 +39,7 @@ integer would look like this: {\tt printf("\%9\$8x")}.
 	\caption{OH GOD I LOVE BEING A SAMPLE IMAGE}     
 	\label{fig_vul_prog_stack}
 \end{figure}
- virt
+
 Setting the address to large values like {\tt 0xd09f00d} can be very difficult, unfortunately, since this requires an
 exceptionally long string, but allowing users to rewrite arbitrary sections of a program's memory in any way is usually
 a very bad idea.
