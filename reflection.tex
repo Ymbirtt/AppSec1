@@ -1,1 +1,11 @@
-Both attacks are entirely preventable. The main problem with the first attack is that printing user-input strings should \emph{not} be done with {\tt printf(str)}, rather {\tt printf("\%s", str)}. The fact that {\tt printf} is able to write to aribrary memory addresses is also a problem. This is actually a useful feature of the function, allowing outputs to be aligned, for instance {\tt printf("\%s: \%n\%d\textbackslash n", "Next number", \&offset, 5); printf("\%*s\%s\textbackslash n", offset, "", "\textasciicircum This is the third prime!")} will align the {\tt \textasciicircum} character such that it points at the 5. Arguably, this behavior isn't necessary, since the return value of {\tt printf} is the number of characters printed in the entire statement, so the functionality is replaceable, but removing functionality from any part of the C standard IO library is almost certainly a bad idea. Using the canonical {\tt printf("\%s", str)} is probably a better option. Also, regardless of how securely a program seems to have been written, user input should always be assumed dangerous until it has been checked. If for some reason the input must be passed directly, it could be sanitised by either doubling up or removing all \% characters.
+Both attacks are entirely preventable. The main problem with the first attack is that printing user-input strings should
+\emph{not} be done with {\tt printf(str)}, rather {\tt printf("\%s", str)}. The fact that {\tt printf} is able to write
+to aribrary memory addresses is also a problem. This is actually a useful feature of the function, allowing outputs to
+be aligned, for instance {\tt printf("\%s: \%n\%d\textbackslash n", "Next number", \&offset, 5);
+printf("\%*s\%s\textbackslash n", offset, "", "\textasciicircum This is the third prime!")} will align the {\tt
+\textasciicircum} character such that it points at the 5. Arguably, this behavior isn't necessary, since the return
+value of {\tt printf} is the number of characters printed in the entire statement, so the functionality is replaceable,
+but removing functionality from any part of the C standard IO library is almost certainly a bad idea. Using the
+canonical {\tt printf("\%s", str)} is probably a better option. Also, regardless of how securely a program seems to have
+been written, user input should always be assumed dangerous until it has been checked. If for some reason the input must
+be passed directly, it could be sanitised by either doubling up or removing all \% characters.

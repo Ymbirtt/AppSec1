@@ -1,8 +1,18 @@
 \subsection{Attack 1, the Format String Vulnerability}
 
-The {\tt printf, fprintf, sprintf}, etc functions in the standard C IO library are all vulnerable to format string based attacks, which exploit the manner in which C handles calls to the class of functions they belong to: \textbf{variadic functions}\cite{vfunc}. When a function is called in the C programming language,
-%http://www.csee.umbc.edu/~chang/cs313.s02/stack.shtml - note the difference in stack architectures, our VMs are slightly different from this situation
-the exact actions are dependent on the specific processor architecture, compiler and operating system of the platform, but in the case of this machine, the situation is similar to that depicted in figure \ref{fig_stack}. When a function is called, the return address is pushed onto the stack first at the highest memory address, followed by the function's arguments in reverse order at decreasing memory addresses, so the first argument resides at the top of the stack, at the lowest memory address, and all arguments sit below it, at higher memory addresses. The base pointer, stored in register {\tt EBP}, then points to a location above this on the stack, defining the start of the function's local address space. When a function requires a argument, it simply pulls values off the stack at some distance below the stack's base pointer.
+The {\tt printf, fprintf, sprintf}, etc functions in the standard C IO library are all vulnerable to format string based
+attacks, which exploit the manner in which C handles calls to the class of functions they belong to: \textbf{variadic
+functions}\cite{vfunc}. When a function is called in the C programming language,
+%http://www.csee.umbc.edu/~chang/cs313.s02/stack.shtml - note the difference in stack architectures, our VMs are
+%slightly different from this situation
+the exact actions are dependent on the specific processor architecture, compiler and operating system of the platform,
+but in the case of this machine, the situation is similar to that depicted in figure \ref{fig_stack}. When a function is
+called, the return address is pushed onto the stack first at the highest memory address, followed by the function's
+arguments in reverse order at decreasing memory addresses, so the first argument resides at the top of the stack, at the
+lowest memory address, and all arguments sit below it, at higher memory addresses. The base pointer, stored in register
+{\tt EBP}, then points to a location above this on the stack, defining the start of the function's local address space.
+When a function requires a argument, it simply pulls values off the stack at some distance below the stack's base
+pointer.
 
 \begin{figure}[ht]
     \centering
@@ -11,7 +21,11 @@ the exact actions are dependent on the specific processor architecture, compiler
     \label{fig_stack}
 \end{figure}
 
-When all this is pushed onto the stack, it is pushed above the stack space belonging to the calling function. If a function has only 3 arguments, and I attempt to access the 10th argument, I'll start reading bits of memory belonging to the calling function. In most cases this isn't an issue. When a function is defined {\tt void fun(arg1, arg2, arg3)}, attempting to access {\tt arg10} results in an unsurprising parse error, and a program with a line such as {\tt foo = *(\&arg1 - 9*sizeof(int))} is fairly obviously doing something that it shouldn't.
+When all this is pushed onto the stack, it is pushed above the stack space belonging to the calling function. If a
+function has only 3 arguments, and I attempt to access the 10th argument, I'll start reading bits of memory belonging to
+the calling function. In most cases this isn't an issue. When a function is defined {\tt void fun(arg1, arg2, arg3)},
+attempting to access {\tt arg10} results in an unsurprising parse error, and a program with a line such as {\tt foo =
+*(\&arg1 - 9*sizeof(int))} is fairly obviously doing something that it shouldn't.
 
 Format strings are a different story however. The intended use is for a developer to write something like {\tt
 printf("\%x", x)} to print the value of the variable {\tt x} interpreted as a hexadecimal integer, however {\tt printf}
@@ -26,7 +40,13 @@ dereference them, and probably eventually segfault when it hits a memory address
 thus far to that address. {\tt printf("\%n\%n...\%n")} will tear addresses from the stack, dereference them, set them
 all to 0, and eventually segfault when it hits an invalid address.
 
-Tim's attack used the fact that {\tt vul\_prog} asks the user to input a decimal integer before entering a string. This integer is stored near the top of the stack, as shown in figure \ref{fig_vul_prog_stack}. The addresses of both secrets are printed by the program, so this address can be read, converted to a decimal integer, then planted on the stack at a predictable location. This location, is where the ninth argument to printf should be, so the line {\tt printf("\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%n")} will dig eight words from the stack to the integer input by the user, then set the value at that memory address to 64 = 0x40. Higher values can then be achieved by padding the string with more periods before the {\tt \%n}.
+Tim's attack used the fact that {\tt vul\_prog} asks the user to input a decimal integer before entering a string. This
+integer is stored near the top of the stack, as shown in figure \ref{fig_vul_prog_stack}. The addresses of both secrets
+are printed by the program, so this address can be read, converted to a decimal integer, then planted on the stack at a
+predictable location. This location, is where the ninth argument to printf should be, so the line {\tt
+printf("\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%n")} will dig eight words from the stack to the integer input by the user,
+then set the value at that memory address to 64 = 0x40. Higher values can then be achieved by padding the string with
+more periods before the {\tt \%n}.
 
 
 \begin{figure}[ht]
@@ -39,18 +59,41 @@ Tim's attack used the fact that {\tt vul\_prog} asks the user to input a decimal
 
 \red{Drum's attack is very different in lots of important ways}
 
-Setting the address to large values like {\tt 0xd09f00d} can be very difficult, unfortunately, since this requires an exceptionally long string, but allowing users to rewrite arbitrary sections of a program's memory in any way is usually a very bad idea.
+Setting the address to large values like {\tt 0xd09f00d} can be very difficult, unfortunately, since this requires an
+exceptionally long string, but allowing users to rewrite arbitrary sections of a program's memory in any way is usually
+a very bad idea.
 
 
 \subsection{Attack 2, riding the NOP Sled}
 
-When C calls a function, the return address is pushed onto the stack, and all local variables are pushed below it. Buffers, when placed on the stack, grow downwards - the first character in the buffer is at the top, the last at the bottom. This means that buffers grow towards the return pointer, which leads to various hilarious exploits. The exploit we used is based on the standard NOP sled. We were provided with some compiled bytecode which opened a shell when executed. If the return pointer can be rewritten to point to the start of this bytecode, then whatever program is currently executing will execute the bytecode and turn itself into a shell. Unsafe string functions such as {\tt strcpy} will write strings past the end of their buffer, if necessary, regardless of how wide the buffer actually is. By writing a sufficiently long string, we can overflow the buffer and overwrite memory lower down on the stack, such as the return pointer.
+When C calls a function, the return address is pushed onto the stack, and all local variables are pushed below it.
+Buffers, when placed on the stack, grow downwards - the first character in the buffer is at the top, the last at the
+bottom. This means that buffers grow towards the return pointer, which leads to various hilarious exploits. The exploit
+we used is based on the standard NOP sled. We were provided with some compiled bytecode which opened a shell when
+executed. If the return pointer can be rewritten to point to the start of this bytecode, then whatever program is
+currently executing will execute the bytecode and turn itself into a shell. Unsafe string functions such as {\tt strcpy}
+will write strings past the end of their buffer, if necessary, regardless of how wide the buffer actually is. By writing
+a sufficiently long string, we can overflow the buffer and overwrite memory lower down on the stack, such as the return
+pointer.
 
-Precisely engineering the return pointer to point exactly to the shellcode's location is fairly difficult. Though this would be possible in this example without memory randomization, when memory address randomization is enabled it becomes very difficult. A NOP sled sidesteps this issue. The input file is 512 %check this
-bytes long, and the shell code is a suffix of this file. An address which is somewhere lower in the stack than the start of the buffer is repeated (backwards) several times. Between the shell code and the address block is a series of no-operation instructions in precompiled bytecode. Each of these instructions simply tells the processor to do nothing, then move on to the next instruction. This forms the NOP sled. Jumping the execution into any one of those NOPs will cause the program to slide down its own stack directly into the shellcode payload, providing a large number of valid targets, making memory addresses much easier to guess.
+Precisely engineering the return pointer to point exactly to the shellcode's location is fairly difficult. Though this
+would be possible in this example without memory randomization, when memory address randomization is enabled it becomes
+very difficult. A NOP sled sidesteps this issue. The input file is 517 bytes long, and the shell code is a suffix of
+this file. An address which is somewhere lower in the stack than the start of the buffer is repeated (backwards) several
+times. Between the shell code and the address block is a series of no-operation instructions in precompiled bytecode.
+Each of these instructions simply tells the processor to do nothing, then move on to the next instruction. This forms
+the NOP sled. Jumping the execution into any one of those NOPs will cause the program to slide down its own stack
+directly into the shellcode payload, providing a large number of valid targets, making memory addresses much easier to
+guess.
 
-In order to ensure that the resulting shell is indeed a root shell, we need to invoke a {\tt setuid} before launching a shell. There are a few ways to make this modification to the shellcode -- Tim chose to copy the assembly code from the assignment sheet, and add some extra lines to make this call. {\tt xorl \%ebx \%ebx} will set the general-purpose register {\tt \%ebx} to 0. {\tt lea 0x17(\%ebx) \%eax} is designed for computing memory addresses, but here we use it to add {\tt 0x17} to {\tt \%ebx} and store the result in {\tt \%eax}. {\tt int \$0x80} triggers interrupt {\tt 0x80}, a syscall interrupt. Syscalls are parameterised exclusively by registers.%http://www.linuxjournal.com/article/4048?page=0,1
+In order to ensure that the resulting shell is indeed a root shell, we need to invoke a {\tt setuid} before launching a
+shell. There are a few ways to make this modification to the shellcode -- Tim chose to copy the assembly code from the
+assignment sheet, and add some extra lines to make this call. {\tt xorl \%ebx \%ebx} will set the general-purpose
+register {\tt \%ebx} to 0. {\tt lea 0x17(\%ebx) \%eax} is designed for computing memory addresses, but here we use it to
+add {\tt 0x17} to {\tt \%ebx} and store the result in {\tt \%eax}. {\tt int \$0x80} triggers interrupt {\tt 0x80}, a
+syscall interrupt. Syscalls are parameterised exclusively by registers.%http://www.linuxjournal.com/article/4048?page=0,1
 The first parameter is {\tt \%eax = 0x17}, and tells the kernel to execute {\tt syscall[0x17]}, namely {\tt setuid}. The
 second is {\tt \%ebx = 0x0}, which is passed as a parameter into {\tt setuid}. {\tt setuid(0)} sets the user id to 0,
 more commonly known as {\tt root}. When this call is placed before the code to launch a shell, the shell will be
-launched with root privileges. Assembling this and skimming over the bytecode, we find that prepending the payload with {\tt 0x31db8d4317cd80} will get the job done.
+launched with root privileges. Assembling this and skimming over the bytecode, we find that prepending the payload with
+{\tt 0x31db8d4317cd80} will get the job done.

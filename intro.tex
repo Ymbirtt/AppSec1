@@ -10,6 +10,16 @@ do6613 & Did some other stuff & Probably also 50\% \\
 \end{tabular}
 \end{figure}
 
-Together, we have exploted a pair of security issues in some very poorly written programs. Being experienced in various security exploits, we decided to both attempt each task independently, resulting in subtly different attacks, which can then be compared and contrasted for their various features. Regarding the first attack on format strings; Tim's relied on the fact that the program allowed the user to input a number before writing the string, which resulted in an attack that remains valid even if the buffer is located on the heap, whilst Drum built an attack which requires only that the string be stored on the stack, with no reliance on the first input. Both attacks were automated for our own convenience.
+Together, we have exploted a pair of security issues in some very poorly written programs. Being experienced in various
+security exploits, we decided to both attempt each task independently, resulting in subtly different attacks, which can
+then be compared and contrasted for their various features. Regarding the first attack on format strings; Tim's relied
+on the fact that the program allowed the user to input a number before writing the string, which resulted in an attack
+that remains valid even if the buffer is located on the heap, whilst Drum built an attack which requires only that the
+string be stored on the stack, with no reliance on the first input. Both attacks were automated for our own
+convenience.
 
-For the second attack, we each converged on the same basic solution -- a standard NOP sled comprising a block of addresses, a large ``sled" made of aroung 450 NOP instructions, and a code payload at the very end. Execution was diverted to a point in the sled, allowing it to slide down into the payload. Tim's payload was written in x86 assembly which was then assembled with gcc and briefly analysed before being placed at the end of the sled. Drum instead used Metasploit to generate a payload for him, instructing the generator to launch /bin/sh and avoid null bytes.
+For the second attack, we each converged on the same basic solution -- a standard NOP sled comprising a block of
+addresses, a large ``sled" made of aroung 450 NOP instructions, and a code payload at the very end. Execution was
+diverted to a point in the sled, allowing it to slide down into the payload. Tim's payload was written in x86 assembly
+which was then assembled with gcc and briefly analysed before being placed at the end of the sled. Drum instead used
+Metasploit to generate a payload for him, instructing the generator to launch /bin/sh and avoid null bytes.
