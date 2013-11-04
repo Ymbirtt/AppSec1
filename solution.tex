@@ -4,7 +4,7 @@ The {\tt printf, fprintf, sprintf}, etc functions in the standard C IO library a
 %http://www.csee.umbc.edu/~chang/cs313.s02/stack.shtml - note the difference in stack architectures, our VMs are slightly different from this situation
 the exact actions are dependent on the specific processor architecture, compiler and operating system of the platform, but in the case of this machine, the situation is similar to that depicted in figure \ref{fig_stack}. When a function is called, the return address is pushed onto the stack first at the highest memory address, followed by the function's arguments in reverse order at decreasing memory addresses, so the first argument resides at the top of the stack, at the lowest memory address, and all arguments sit below it, at higher memory addresses. The base pointer, stored in register {\tt EBP}, then points to a location above this on the stack, defining the start of the function's local address space. When a function requires a argument, it simply pulls values off the stack at some distance below the stack's base pointer.
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \includegraphics[width = 0.5\textwidth]{./images/placeholder.jpg}
     \caption{OH GOD I LOVE BEING A SAMPLE IMAGE}
@@ -29,7 +29,7 @@ all to 0, and eventually segfault when it hits an invalid address.
 Tim's attack used the fact that {\tt vul\_prog} asks the user to input a decimal integer before entering a string. This integer is stored near the top of the stack, as shown in figure \ref{fig_vul_prog_stack}. The addresses of both secrets are printed by the program, so this address can be read, converted to a decimal integer, then planted on the stack at a predictable location. This location, is where the ninth argument to printf should be, so the line {\tt printf("\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%n")} will dig eight words from the stack to the integer input by the user, then set the value at that memory address to 64 = 0x40. Higher values can then be achieved by padding the string with more periods before the {\tt \%n}.
 
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \includegraphics[width = 0.5\textwidth]{./images/placeholder.jpg}
     \caption{OH GOD I LOVE BEING A SAMPLE IMAGE}
