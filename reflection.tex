@@ -38,3 +38,9 @@ emulation of this feature enabled by default. %https://wiki.ubuntu.com/Security/
 Presumably this was disabled on the VMs for the purposes of these labs. This feature, properly used, neatly stops most
 code payloads from executing.
 
+Also, a NOP sled involves executing a large number of NOP instructions. Very few programs become more efficient by using
+NOPs,%http://www.steike.com/code/useless/zip-file-quine/
+and it is highly unlikely that a legitimate program will spend its processor time doing nothing at all. A real-world NOP
+sled will usually use instructions that do nothing in a ``busy" way, %http://en.wikipedia.org/wiki/NOP_sled
+since programs executing lots of NOPs are suspicious and can be easily spotted.
+
