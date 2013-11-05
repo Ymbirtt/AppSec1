@@ -35,6 +35,9 @@ Further, there are almost no legitimate situations in which code placed on the s
 processors support NX regions, areas of memory marked out as non-executable, causing a program to immediately crash if
 execution jumps to somewhere it shouldn't. Interestingly, Ubuntu 9.11 with the i386 architecture should have an
 emulation of this feature enabled by default. %https://wiki.ubuntu.com/Security/Features#nx
+Not only that, but reading the contents of {\tt /proc/cpuinfo} in the virtual machines gives details of the host
+machine's processor, neither of which runs the i386 architecture. Drum's machine ran an Intel i7 and Tim's ran an i5,
+both of which support NX bits as reflected by the contents of {\tt /proc/cpuinfo}.
 Presumably this was disabled on the VMs for the purposes of these labs. This feature, properly used, neatly stops most
 code payloads from executing.
 
@@ -42,5 +45,6 @@ Also, a NOP sled involves executing a large number of NOP instructions. Very few
 NOPs,%http://www.steike.com/code/useless/zip-file-quine/
 and it is highly unlikely that a legitimate program will spend its processor time doing nothing at all. A real-world NOP
 sled will usually use instructions that do nothing in a ``busy" way, %http://en.wikipedia.org/wiki/NOP_sled
-since programs executing lots of NOPs are suspicious and can be easily spotted.
+since programs executing lots of NOPs are suspicious and can be easily spotted. Indeed, Drum's Metasploit code uses busy
+NOPs by default.
 
