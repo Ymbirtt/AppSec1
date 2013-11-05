@@ -33,10 +33,10 @@ with more periods before the {\tt \%n}. You can also leverage positional argumen
 stack without changing it, which Drum chose to implement in all of his attacks. Using that syntax, reading the ninth
 integer would look like this: {\tt printf("\%9\$8x")}.
 
-\begin{figure}[ht]     
-	\centering     
-	\includegraphics[width = 0.5\textwidth]{./images/placeholder.jpg}     
-	\caption{OH GOD I LOVE BEING A SAMPLE IMAGE}     
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width = 0.5\textwidth]{./images/placeholder.jpg}
+	\caption{OH GOD I LOVE BEING A SAMPLE IMAGE}
 	\label{fig_vul_prog_stack}
 \end{figure}
 
@@ -50,9 +50,9 @@ length.
 
 Drum's attack used a padding specifier to an unsigned integer format specifier, or omitted the string entirely,
 which allows for the writing of values less than the printed length of the smallest stack variable. Writing a value of
-0 to {\tt secret[1]} without using this method and positional arguments is impossible. 
+0 to {\tt secret[1]} without using this method and positional arguments is impossible.
 
-Tim's attack uses the more tried-and-tested approach of standard stack popping, meaning that the minimum writable value
+Tim's attack uses the more tried-and-tested approach of standard stack popping, meaning that the minimum writeable value
 is determined by the values in the stack and the width specifiers used when they are printed.
 
 \subsection{Attack 2, riding the NOP Sled}
@@ -82,9 +82,10 @@ shell. There are a few ways to make this modification to the shellcode -- Tim ch
 assignment sheet, and add some extra lines to make this call. {\tt xorl \%ebx \%ebx} will set the general-purpose
 register {\tt \%ebx} to 0. {\tt lea 0x17(\%ebx) \%eax} is designed for computing memory addresses, but here we use it to
 add {\tt 0x17} to {\tt \%ebx} and store the result in {\tt \%eax}. {\tt int \$0x80} triggers interrupt {\tt 0x80}, a
-syscall interrupt. Syscalls are parameterised exclusively by
+syscall interrupt. Syscalls are parametrised exclusively by
 registers.%http://www.linuxjournal.com/article/4048?page=0,1 The first parameter is {\tt \%eax = 0x17}, and tells the
 kernel to execute {\tt syscall[0x17]}, namely {\tt setuid}. The second is {\tt \%ebx = 0x0}, which is passed as a
 parameter into {\tt setuid}. {\tt setuid(0)} sets the user id to 0, more commonly known as {\tt root}. When this call is
 placed before the code to launch a shell, the shell will be launched with root privileges. Assembling this and skimming
 over the bytecode, we find that prepending the payload with {\tt 0x31db8d4317cd80} will get the job done.
+

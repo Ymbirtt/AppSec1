@@ -1,9 +1,9 @@
 Both attacks are entirely preventable. The main problem with the first attack is that printing user-input strings should
 \emph{not} be done with {\tt printf(str)}, rather {\tt printf("\%s", str)}. The fact that {\tt printf} is able to write
-to aribrary memory addresses is also a problem. This is actually a useful feature of the function, allowing outputs to
+to arbitrary memory addresses is also a problem. This is actually a useful feature of the function, allowing outputs to
 be aligned, for instance {\tt printf("\%s: \%n\%d\textbackslash n", "Next number", \&offset, 5);
 printf("\%*s\%s\textbackslash n", offset, "", "\textasciicircum This is the third prime!")} will align the {\tt
-\textasciicircum} character such that it points at the 5. Arguably, this behavior isn't necessary, since the return
+\textasciicircum} character such that it points at the 5. Arguably, this behaviour isn't necessary, since the return
 value of {\tt printf} is the number of characters printed in the entire statement, so the functionality is replaceable,
 but removing functionality from any part of the C standard IO library is almost certainly a bad idea. Using the
 canonical {\tt printf("\%s", str)} is probably a better option. Also, regardless of how securely a program seems to have
@@ -21,7 +21,7 @@ itself is not feasible.
 
 This, however, distracts from a more important issue. Using {\tt strcpy} is a really bad idea, since it will copy data
 until it reaches a null byte. Since we can't be sure that a user-input string will contain a null byte before the end of
-the buffer, we sould never use it to process user input. Instead, {\tt strncpy}, the safer version, should be used.
+the buffer, we should never use it to process user input. Instead, {\tt strncpy}, the safer version, should be used.
 Indeed, various tools exist which discourage or circumvent the usage of unsafe functions.
 %http://gcc.gnu.org/ml/gcc-patches/2004-09/msg02055.html
 {\tt --DFORTIFY\_SOURCE=1}, available in versions of gcc later than 4.0, will attempt to replace any unsafe functions
