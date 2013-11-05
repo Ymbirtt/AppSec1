@@ -22,20 +22,20 @@ should be if they existed, without checking whether they exist or not. With enou
 reading memory from the stack frame belonging to the calling function. The {\tt \%s} format specifier interprets an
 ``argument" as a pointer to a null-terminated ASCII string, and prints out its contents. If, then, we call {\tt
 printf("\%s\%s...\%s")}, the program will tear values from the stack, interpret them as memory addresses, attempt to
-dereference them, and probably eventually segfault when it hits a memory address it doesn't have access to. The {\tt
-\%n} format string interprets the relevant ``argument" as a memory address, and writes the number of characters written
-thus far to that address. {\tt printf("\%n\%n...\%n")} will tear addresses from the stack, dereference them, set them
-all to 0, and eventually segfault when it hits an invalid address.
+dereference them, and probably eventually segfault when it hits a memory address it doesn't have access to. {\tt
+printf("\%n\%n...\%n")} will tear addresses from the stack, dereference them, set them all to 0, and eventually segfault
+when it hits an invalid address.
 
-Both Tim and Drum's first attack used the fact that {\tt vul\_prog} asks the user to input a decimal integer before
-entering a string. This integer is stored near the top of the stack, as shown in figure \ref{fig_vul_prog_stack}. The
-addresses of both secrets are printed by the program, so this address can be read, converted to a decimal integer, then
-planted on the stack at a predictable location. This location, is where the ninth argument to printf should be, so the
-line {\tt printf("\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%n")} will dig eight words from the stack to the integer input by the
-user, then set the value at that memory address to 64 = 0x40. Higher values can then be achieved by padding the string
-with more periods before the {\tt \%n}. You can also leverage positional argument syntax to directly investigate the
-stack without changing it, which Drum chose to implement in all of his attacks. Using that syntax, reading the ninth
-integer would look like this: {\tt printf("\%9\$8x")}.
+With the version of the program that requested an integer input, both our attacks used that input as the target address. 
+In the subsequent version we both used the format string itself to determine where to write. In the first
+case, the supplied integer is stored near the top of the stack, as shown in figure \ref{fig_vul_prog_stack}. We simply
+supply the appropriate address in integer form, converted from the output printed by the program. This location is
+equivalent to where the 9th 4-byte argument to a printf call would sit. Thus {\tt
+printf("\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%n")} will dig eight words from the stack to the integer input by the user,
+then set the value at that memory address to 64 = 0x40. Using another {\tt\%x} would read the data. You can also
+leverage positional argument syntax to directly investigate the stack without changing it, which Drum chose to implement
+in all of his attacks. Using that syntax, reading the ninth integer would look like this: {\tt printf("\%9\$8x")}, and
+writing to it would be {\tt printf("\%9\$n")}.
 
 \begin{figure}[ht]
 	\centering
@@ -45,8 +45,7 @@ integer would look like this: {\tt printf("\%9\$8x")}.
 \end{figure}
 
 Setting the address to large values like {\tt 0xd09f00d} can be very difficult, unfortunately, since this requires an
-exceptionally long string. However it is apparent that allowing users to rewrite arbitrary sections of a program's
-memory in any way is usually a very bad idea.
+exceptionally long string.
 
 Both of our memory alteration attacks use the {\tt \%n} format specifier to write to an arbitrary value to the memory
 address of secret[1]. For contrast we decided to use alternate methods of padding the format string to the correct byte
@@ -75,12 +74,13 @@ stack, such as the return pointer.
 Precisely engineering the return pointer to point exactly to the shellcode's location is often difficult. Though this
 would be possible in this example without memory randomization, where we have GDB and access to the source code, when
 memory address randomization is enabled it still becomes very difficult. In scenarios where we have none of these
-advantages we need some flexibility and a NOP sled sidesteps provides it. The input file is 517 bytes long, and the
-shell code is a suffix of this file. An address which is somewhere lower in the stack than the start of the buffer is
-repeated (backwards) several times. Between the shell code and the address block is a series of no-operation
-instructions in precompiled bytecode; this forms the NOP sled. Jumping the execution into any one of those NOPs will
-cause the program to slide down its own stack directly into the shellcode payload, making memory addresses much easier
-to guess.
+advantages we need some flexibility and a NOP sled provides it. We construct our sled generally as follows:
+
+An address which is somewhere earlier in the stack than the start of the current frame's return pointer is repeated
+(endian-ness accounted for) several times until it would clobber the return address. Then a large series of no-operation
+instructions in precompiled bytecode is prepended to the shellcode, and this new blob is appended to the repeated
+addresses. Jumping the execution into any one of those NOPs will cause the program to slide down its own stack directly
+into the shellcode payload, making memory addresses much easier to guess.
 
 In order to ensure that the resulting shell is indeed a root shell, we need to invoke a {\tt setuid} before launching a
 shell. There are a few ways to make this modification to the shellcode -- Tim chose to copy the assembly code from the
