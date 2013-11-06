@@ -3,8 +3,8 @@
 The {\tt printf, fprintf, sprintf}, etc functions in the standard C IO library are all vulnerable to format string based
 attacks, which exploit the manner in which C handles calls to the class of functions they belong to: \textbf{variadic
 functions}\cite{vfunc}. When a function is called in the C programming language,\cite{call_conv}
-the exact actions are dependent on the specific processor architecture, compiler
-in the case of this machine, the situation is similar to that depicted in figure \ref{fig_stack}.
+the exact actions are dependent on the specific processor architecture, compiler and operating system.
+In the case of the lab machines, the situation is similar to that depicted in figure \ref{fig_stack}.
 
 \begin{figure}[ht] \centering \includegraphics[width = 0.65\textwidth]{./images/stack.jpg} \caption{OH GOD I LOVE BEING
 A STACK} \label{fig_stack} \end{figure}
