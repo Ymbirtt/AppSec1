@@ -9,17 +9,17 @@ In the case of the lab machines, the situation is similar to that depicted in fi
 \begin{figure}[ht] \centering \includegraphics[width = 0.65\textwidth]{./images/stack.jpg} \caption{OH GOD I LOVE BEING
 A STACK} \label{fig_stack} \end{figure}
 
-Format strings are useful, but can be dangerous; Their intended use is along the line of {\tt printf("\%x", x)} which
-prints the value of the variable {\tt x} interpreted as a hexadecimal integer. However, {\tt printf} does not have a
-fixed number of arguments, so trusts the format string to know that. {\tt printf("\%x \%x \%x")} will print outthe
-values of whatever is stored at the memory locations where the $2^{nd}$, $3^{rd}$ and $4^{th}$ arguments to printf
-should be if they existed, without checking whether they exist or not. With enough format specifiers, we can start
-reading memory from the stack frame belonging to the calling function. The {\tt \%s} format specifier interprets an
-``argument" as a pointer to a null-terminated ASCII string, and prints out its contents. If, then, we call {\tt
-printf("\%s\%s...\%s")}, the program will tear values from the stack, interpret them as memory addresses, attempt to
-dereference them, and probably eventually segfault when it hits a memory address it doesn't have access to. {\tt
-printf("\%n\%n...\%n")} will tear addresses from the stack, dereference them, set them all to 0, and eventually segfault
-when it hits an invalid address.
+Format string functions are useful and powerful, but can be dangerous; Their intended use is along the line of {\tt
+printf("\%x", x)} which prints the value of the variable {\tt x} interpreted as a hexadecimal integer. However, {\tt
+printf} does not have a fixed number of arguments, so trusts the format string to know that. {\tt printf("\%x \%x \%x")}
+will print outthe values of whatever is stored at the memory locations where the $2^{nd}$, $3^{rd}$ and $4^{th}$
+arguments to printf should be if they existed, without checking whether they exist or not. With enough format
+specifiers, we can start reading memory from the stack frame belonging to the calling function. The {\tt \%s} format
+specifier interprets an ``argument" as a pointer to a null-terminated ASCII string, and prints out its contents. If,
+then, we call {\tt printf("\%s\%s...\%s")}, the program will tear values from the stack, interpret them as memory
+addresses, attempt to dereference them, and probably eventually segfault when it hits a memory address it doesn't have
+access to. {\tt printf("\%n\%n...\%n")} will tear addresses from the stack, dereference them, set them all to 0, and
+eventually segfault when it hits an invalid address.
 
 With the version of the program that requested an integer input, both our attacks used that input as the target address.
 In the subsequent version we both used the format string itself to determine where to write. In the first case, the
