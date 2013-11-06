@@ -60,16 +60,12 @@ is determined by the values in the stack and the width specifiers used when they
 
 \subsection{Attack 2, riding the NOP Sled}
 
-When C calls a function, the return address is pushed onto the stack, and all local variables are pushed below it.
-Buffers, when placed on the stack, grow downwards - the first character in the buffer is at the top, the last at the
-bottom. This means that buffers grow towards the return pointer, in the direction that memory writes occur. The exploit
-we used is based on the standard NOP sled and stack smashing approach, where we clobber the stack in order to manipulate
-the return address of the current function. We were provided with some compiled bytecode which opened a shell when
-executed. If the return pointer can be rewritten to point to the start of this bytecode, then whatever program is
-currently executing will execute the bytecode and turn itself into a shell. Unsafe string functions such as {\tt strcpy}
-will write strings past the end of their buffer, if necessary, regardless of how wide the buffer actually is. By writing
-a sufficiently long string, we can overflow the buffer and overwrite memory lower down (higher memory addresses) on the
-stack, such as the return pointer.
+The exploit we used is based on the standard NOP sled and stack smashing approach, where we clobber the stack in order
+to manipulate the return address of the current function. If the return pointer can be rewritten to point to the start
+of the bytecode provided in the lab, then whatever program is currently executing will execute the bytecode and turn
+itself into a shell. Unsafe string functions such as {\tt strcpy} will write strings past the end of their buffer, if
+necessary, regardless of how wide the buffer actually is. By writing a sufficiently long string, we can overflow the
+buffer and overwrite memory lower down (higher memory addresses) on the stack, such as the return pointer.
 
 Precisely engineering the return pointer to point exactly to the shellcode's location is often difficult. Though this
 would be possible in this example without memory randomization, where we have GDB and access to the source code, when
