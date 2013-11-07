@@ -12,27 +12,23 @@ showing the dangerous arrangement of a function's arguments and its caller's loc
 
 Format string functions are useful and powerful, but can be dangerous; Their intended use is along the line of {\tt
 printf("\%x", x)} which prints the value of the variable {\tt x} interpreted as a hexadecimal integer. However, {\tt
-printf} does not have a fixed number of arguments, so trusts the format string to know that. {\tt printf("\%x \%x \%x")}
-will print outthe values of whatever is stored at the memory locations where the $2^{nd}$, $3^{rd}$ and $4^{th}$
-arguments to printf should be if they existed, without checking whether they exist or not. With enough format
-specifiers, we can start reading memory from the stack frame belonging to the calling function. The {\tt \%s} format
-specifier interprets an ``argument" as a pointer to a null-terminated ASCII string, and prints out its contents. If,
-then, we call {\tt printf("\%s\%s...\%s")}, the program will tear values from the stack, interpret them as memory
-addresses, attempt to dereference them, and probably eventually segfault when it hits a memory address it doesn't have
-access to. {\tt printf("\%n\%n...\%n")} will tear addresses from the stack, dereference them, set them all to 0, and
-eventually segfault when it hits an invalid address.
+printf} blindly trusts the format string to reflect the arguments. {\tt printf("\%x \%x \%x")} will print outthe values
+of whatever is stored at the memory locations where the $2^{nd}$, $3^{rd}$ and $4^{th}$ arguments to printf should be if
+they existed, without checking whether they exist or not. This means just using format specifiers we can start reading
+memory from the stack that doesn't belong in the current context. If, then, we call {\tt printf("\%s\%s...\%s")}, the
+program will tear values from the stack, interpret them as memory addresses that contain null-terminated strings, and
+attempt to deference and print them. This will segfault quickly as the program attempts to access unauthorised
+addresses. Similarly {\tt printf("\%n\%n...\%n")} will tear addresses from the stack, dereference them, set those
+locations to 0x0, and again crash when it hits an invalid address.
 
 With the version of the program that requested an integer input, both our attacks used that input as the target address.
-In the subsequent version we both used the format string itself to determine where to write. In the first case, the
-supplied integer is stored near the top of the stack. We simply supply the appropriate address in integer form,
-converted from the output printed by the program. This location is equivalent to where the 9th 4-byte argument to a
-printf call would sit. Thus {\tt printf("\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%n")} will dig eight words from the stack to
+In the subsequent version we both used the format string itself to determine where to write. In the first case, we simply supply the appropriate address in integer form, converted from the output printed by the program. This location is equivalent (when stack protectors are disabled) to where the 9th 4-byte argument to a printf call would sit. Thus {\tt printf("\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%n")} will dig eight words from the stack to
 the integer input by the user, then set the value at that memory address to 64 = 0x40. Using another {\tt\%x} would read
 the data. You can also leverage positional argument syntax to directly investigate the stack without changing it, which
 Drum chose to implement in all of his attacks. Using that syntax, reading the ninth integer would look like this: {\tt
 printf("\%9\$8x")}, and writing to it would be {\tt printf("\%9\$n")}.
 
-Setting the address to large values like {\tt 0xd09f00d} can be very difficult, unfortunately, since this requires an
+Setting the address to large values like {\tt 0xd09f00d} can be very difficult, since this requires an
 exceptionally long string.
 
 Both of our memory alteration attacks use the {\tt \%n} format specifier to write to an arbitrary value to the memory
@@ -49,15 +45,15 @@ values in the stack and the width specifiers used when they are printed.
 
 The exploit we used is based on the standard NOP sled and stack smashing approach, where we clobber the stack in order
 to manipulate the return address of the current function. If the return pointer can be rewritten to point to the start
-of the bytecode provided in the lab, then whatever program is currently executing will execute the bytecode and turn
-itself into a shell. Unsafe string functions such as {\tt strcpy} will write strings past the end of their buffer, if
-necessary, regardless of how wide the buffer actually is. By writing a sufficiently long string, we can overflow the
-buffer and overwrite memory lower down (higher memory addresses) on the stack, such as the return pointer.
+of the bytecode provided in the lab, then the running program will execute the bytecode and turn itself into a shell.
+Unsafe string functions such as {\tt strcpy} will write strings past the end of their buffer, if not terminated,
+regardless of how wide the buffer actually is. By writing a sufficiently long string, we can overflow the buffer and
+overwrite memory lower down (higher memory addresses) on the stack, such as the return pointer.
 
 Precisely engineering the return pointer to point exactly to the shellcode's location is often difficult. Though this
 would be possible in this example without memory randomization, where we have GDB and access to the source code, when
-memory address randomization is enabled it still becomes very difficult. In scenarios where we have none of these
-advantages we need some flexibility and a NOP sled provides it. We construct our sled generally as follows:
+memory address randomization is enabled it still becomes very difficult. We need extra flexibility a NOP sled provides
+it. We construct our sled generally as follows:
 
 An address which is somewhere earlier in the stack than the start of the current frame's return pointer is repeated
 (endian-ness accounted for, avoiding null bytes) several times until it would clobber the return address. Then a large

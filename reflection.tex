@@ -1,68 +1,103 @@
-Both attacks are entirely preventable. The main problem with the first attack is that printing user-input strings should
-\emph{not} be done with {\tt printf(str)}, rather {\tt printf("\%s", str)}. The fact that {\tt printf} is able to write
-to arbitrary memory addresses is also a problem. This is actually a useful feature of the function, allowing outputs to
-be aligned, for instance {\tt printf("\%s: \%n\%d\textbackslash n", "Next number", \&offset, 5);
-printf("\%*s\%s\textbackslash n", offset, "", "\textasciicircum This is the third prime!")} will align the {\tt
-\textasciicircum} character such that it points at the 5. Arguably, this behaviour isn't necessary, since the return
-value of {\tt printf} is the number of characters printed in the entire statement, so the functionality is replaceable,
-but removing functionality from any part of the C standard IO library is almost certainly a bad idea. Using the
-canonical {\tt printf("\%s", str)} is probably a better option. Also, regardless of how securely a program seems to have
-been written, user input should always be assumed dangerous until it has been checked. If for some reason the input must
-be passed directly, it could be sanitised by either doubling up or removing all \% characters, but we see no
-circumstances under which this would actually be necessary.
+Both attacks are entirely preventable. In the case of format string vulnerabilities, we simply suggest user-input
+strings should \emph{not} be done with {\tt printf(str)}, but rather with {\tt printf("\%s", str)}. The fact that {\tt
+printf} is able to write to arbitrary memory addresses is also a problem. This is actually a useful feature of the
+function, allowing outputs to be aligned, for instance {\tt printf("\%s: \%n\%d\textbackslash n", "Next number",
+\&offset, 5); printf("\%*s\%s\textbackslash n", offset, "", "\textasciicircum This is the third prime!")} will align the
+{\tt \textasciicircum} character such that it points at the 5. Arguably, this behaviour isn't necessary, since the
+return value of {\tt printf} is the number of characters printed in the entire statement, so the functionality is
+replaceable, but removing functionality from any part of the C standard IO library is almost certainly a bad idea. Also,
+regardless of how securely a program seems to have been written, user input should always be assumed dangerous until it
+has been checked. If for some reason the input must be passed directly to printf, it could be sanitised by either
+doubling up or removing all \% characters, but we see no circumstances under which this would actually be necessary.
 
-The second attack has a plethora of countermeasures. Buffer overflows and NOP sleds are old attacks, relatively
-speaking, so significant time and effort has been spent on countering them. The most popular countermeasure, used by
-default in modern versions of gcc, is the stack canary. A randomly selected value is pushed on the stack between the
-function's local variables and return address, and also stored elsewhere. In order to overwrite the return address, an
-attack would also need to overwrite the canary. If, when returning from the function, it appears that the canary has
-changed, then the program will immediately crash. Guessing the value of the canary is usually very difficult, so
-overwriting it with itself is not feasible. Recent versions of GCC use this by default, and a developer must explicitly
-turn it off using {\tt -fno-stack-protector}. It is very unlikely that this would happen by accident.
+Preventing stack-smashing attacks is a not a new problem, and there are three very effective classes of countermeasure:
+stack protectors (also known as canaries), ASLR (address space layout randomisation) and NX (non-executable) regions.
+Stack protectors are random values that are placed on the stack between the local variables of the running function and
+the return pointer of that stack frame. These randomly generated values are also stored elsewhere and the program will
+crash upon returning if the stored and stack values differ. Since clobbering the return pointer also clobbers the
+canaries, this countermeasure can quite effectively prevent alteration of return values. They are enabled by default in
+recent compilers, and must be explicitly disabled (GCC requires {\tt -fno-stack-protector}), which doesn't happen by
+accident. Stack protectors do not prevent the clobbering from occuring though; Using {\tt strcpy} will copy data until
+it reaches a null byte. Since we can't be sure that a user-input string will contain a null byte before the end of the
+buffer, we should never use it to process user input. Instead, {\tt strncpy}, the safer version, should be used, which
+stops after a given number of bytes. Various tools exist which discourage or circumvent the usage of unsafe functions.
+{\tt --DFORTIFY\_SOURCE=1}\cite{fort_source}, available in versions of GCC later than 4.0, will attempt to replace any
+unsafe functions with their safe equivalents. Including {\tt banned.h} from Microsoft\cite{banned} will cause programs
+to throw errors on compilation if they attempt to use any unsafe functions. Lint utilities (such as {\tt splint})
+typically detect potential buffer overflows as well.
 
-This, however, distracts from a more important issue. Using {\tt strcpy} is a really bad idea, since it will copy data
-until it reaches a null byte. Since we can't be sure that a user-input string will contain a null byte before the end of
-the buffer, we should never use it to process user input. Instead, {\tt strncpy}, the safer version, should be used.
-Indeed, various tools exist which discourage or circumvent the usage of unsafe functions. {\tt
---DFORTIFY\_SOURCE=1}\cite{fort_source}, available in versions of gcc later than 4.0, will attempt to replace any unsafe
-functions with their safe equivalents. Including {\tt banned.h} from Microsoft\cite{banned} will cause programs to throw
-errors on compilation if they attempt to use any unsafe functions. The {\tt splint} utility will also detect potential
-buffer overflows in programs and inform the developer. {\tt strcpy} should generally not be used anywhere, and if it is
-it should only be in situations where we can ensure that buffers cannot possibly overflow.
+ASLR, which is discussed in the labs themselves, simply offsets the applications allocated memory by a different amount
+each time it runs. If the program can only be run a limited number of times, this makes the attack harder, but given
+knowledge of the architecture and multiple program runs an attacker can overcome this countermeasure, such as in Tim's
+attack where FOOBARBLAHBLAH % Tim please elaborate?. This is different from the stack protectors, in that it is outside
+of the compiled program, and is performed by the operating system for all programs. It is typically enabled by default
+in all modern operating systems, though it has been added piece by piece to some systems, meaning that many attacks were
+still viable even after the invention of this countermeasure.\cite{wiki_aslr}
 
-Further, there are almost no legitimate situations in which code placed on the stack should be executable. Most modern
-processors support NX regions, areas of memory marked out as non-executable, causing a program to immediately crash if
-execution jumps to somewhere it shouldn't. Interestingly, Ubuntu 9.11 with the i386 architecture should have an
-emulation of this feature enabled by default\cite{nx_bit}. Not only that, but reading the contents of {\tt
-/proc/cpuinfo} in the virtual machines gives details of the host machine's processor, neither of which runs the i386
-architecture. Drum's machine ran an Intel i7 and Tim's ran an i5, both of which support NX bits as reflected by the
-contents of {\tt /proc/cpuinfo}. Presumably this was disabled on the VMs for the purposes of these labs. This feature,
-properly used, can neatly stop most code payloads from executing.
+Lastly, NX regions\cite{wiki_nx} are regions of memory that will never be considered as instructions, only data. If any
+program attempts to run these areas, it will crash. Like ASLR, it is performed at an operating system level, but
+requires hardware support.  Most modern processors support NX regions, areas of memory marked out as non-executable,
+causing a program to immediately crash if execution jumps to somewhere it shouldn't. Interestingly, Ubuntu 9.11 with the
+i386 architecture should have an emulation of this feature enabled by default\cite{nx_bit}. Not only that, but reading
+the contents of {\tt /proc/cpuinfo} in the virtual machines gives details of the host machine's processor, neither of
+which runs the i386 architecture. Drum's machine ran an Intel i7 and Tim's ran an i5, both of which support NX bits as
+reflected by the contents of {\tt /proc/cpuinfo}. Presumably this was disabled on the VMs for the purposes of these
+labs. This feature, properly used, can neatly stop most code payloads from executing.
 
-Also, a NOP sled involves executing a large number of NOP instructions. Very few programs become more efficient by using
-NOPs\cite{zip_quine}, and it is highly unlikely that a legitimate program will spend its processor time doing nothing at
-all. A real-world NOP sled will usually use instructions that do nothing in a ``busy" way\cite{wiki_sled}, since
-programs executing lots of NOPs are suspicious and could be easily spotted. Indeed, Drum's Metasploit code uses busy
-NOPs by default.
+% Buffer overflows and NOP sleds are old attacks, relatively speaking, so significant time and effort has been spent on
+% countering them. The most popular countermeasure, used by default in modern versions of gcc, is the stack canary. A
+% randomly selected value is pushed on the stack between the function's local variables and return address, and also
+% stored elsewhere. In order to overwrite the return address, an attack would also need to overwrite the canary. If,
+% when returning from the function, it appears that the canary has changed, then the program will immediately crash.
+% Guessing the value of the canary is usually very difficult, so overwriting it with itself is not feasible. Recent
+% versions of GCC use this by default, and a developer must explicitly turn it off using {\tt -fno-stack-protector}. It
+% is very unlikely that this would happen by accident.
 
-By itself, the potential for damage from a format string attack is present, but not great. An adversary becomes capable
-of setting a specific location in memory to a particular quantity. The main issue here comes in guessing memory
-addresses. Most modern operating systems randomise their memory addresses, so guessing the location in memory of, say, a
-function pointer would be quite difficult. With repeated runs, an adversary may be capable of setting a flag in memory
-to make a program branch in a particular way, possibly granting access to features they may not ordinarily have.
+% Stack protectors do not prevent the copying from occuring though; Using {\tt strcpy} will copy data until it reaches a
+% null byte. Since we can't be sure that a user-input string will contain a null byte before the end of the buffer, we
+% should never use it to process user input. Instead, {\tt strncpy}, the safer version, should be used, which stops
+% after a given number of bytes. Various tools exist which discourage or circumvent the usage of unsafe functions. {\tt
+% --DFORTIFY\_SOURCE=1}\cite{fort_source}, available in versions of gcc later than 4.0, will attempt to replace any
+% unsafe functions with their safe equivalents. Including {\tt banned.h} from Microsoft\cite{banned} will cause programs
+% to throw errors on compilation if they attempt to use any unsafe functions. Lint utilities (such as {\tt splint})
+% typically detect potential buffer overflows in programs as well.
 
-If, however, this vulnerability exists alongside a buffer overflow, then the damage potential is significantly greater.
-In most situations, the presence of a stack canary nullifies the risk of a buffer overflow attack. If a format string
-vulnerability is present, however, an adversary can tear values from the stack in seach of this canary, and duplicate it
-at the start of their NOP sled. A program might feasibly prompt the user to input the name of a file, repeat that name
-back to the user, wait for anyone editing the file to stop, then open the file and read it into memory for editing. If
-this all happens in the same function with both a buffer overflow and a format string vulnerability present, an
-adversary can open a target file for editing with a name that contains several {\tt \%x} format specifiers. The program
-will prompt the adversary to enter this file name, and when it repeats it, the adversary can read off the value of the
-stack canary. The program will then block, waiting for the adversary to stop editing the file. The adversary places
-several duplicate canaries at the start of the file, then follows it with a standard NOP sled and closes the file. The
-program reads this file, and falls victim to the NOP sled, leaving the system open to whatever the adversary might want
-to do with it.
+% Further, there are almost no legitimate situations in which code placed on the stack should be executable. Most modern
+% processors support NX regions, areas of memory marked out as non-executable, causing a program to immediately crash if
+% execution jumps to somewhere it shouldn't. Interestingly, Ubuntu 9.11 with the i386 architecture should have an
+% emulation of this feature enabled by default\cite{nx_bit}. Not only that, but reading the contents of {\tt
+% /proc/cpuinfo} in the virtual machines gives details of the host machine's processor, neither of which runs the i386
+% architecture. Drum's machine ran an Intel i7 and Tim's ran an i5, both of which support NX bits as reflected by the
+% contents of {\tt /proc/cpuinfo}. Presumably this was disabled on the VMs for the purposes of these labs. This feature,
+% properly used, can neatly stop most code payloads from executing.
+
+Finally, a NOP sled involves executing a large number of NOP instructions. Very few programs become more efficient by
+using NOPs\cite{zip_quine}, and it is highly unlikely that a legitimate program will spend its processor time doing
+nothing at all. A real-world NOP sled will usually use instructions that do nothing in a ``busy" way\cite{wiki_sled},
+since programs executing lots of NOPs are suspicious and could be easily spotted. Indeed, Drum's Metasploit code uses
+busy NOPs by default.
+
+\subsection{Damage Potential}
+
+% By itself, the potential for damage from a format string attack is present, but not great. An adversary becomes
+% capable of setting a specific location in memory to a particular quantity. The main issue here comes in guessing
+% memory addresses. Most modern operating systems randomise their memory addresses, so guessing the location in memory
+% of, say, a function pointer would be quite difficult. With repeated runs, an adversary may be capable of setting a
+% flag in memory to make a program branch in a particular way, possibly granting access to features they may not
+% ordinarily have.
+
+By itself, a format string vulnerability offers only limited opportunity for control flow execution, and typically
+relies on altering memory locations to affect the vulnerable program, rather than hijacking the process completely. You
+can, however, create detailed stack dumps, and thus the vulnerability can often serve to enhance knowledge of the
+system. This knowledge is then leveraged in other attacks.
+
+
+For example, if this vulnerability exists alongside a buffer overflow, then the damage potential is significantly
+greater. In most situations, the presence of a stack canary nullifies the risk of a buffer overflow attack. Using a format
+string vulnerability an adversary can tear values from the stack in seach of this canary, and duplicate it at the start of their NOP sled.
+A program might feasibly prompt the user to input the name of a file, repeat that name back to the user, wait for anyone editing the file to stop, then open the file and read it into memory for editing. If this all happens in the same function with both a buffer overflow and a format string vulnerability
+present, an adversary can open a target file for editing with a name that contains several {\tt \%x} format specifiers. The program will prompt the adversary to enter this file name, and when it repeats it, the adversary can read off the value of the stack canary. The program will then block, waiting for the adversary to stop editing the file. The adversary places several duplicate canaries at the start of the file, then follows it with a standard NOP sled and closes the file. The program reads this file, and falls victim to the NOP sled, leaving the system open to whatever the
+adversary might want to do with it.
 
 Modern techniques have mitigated most risk from buffer overflow attacks, but they do not serve as a substitute for
 security-aware programming.
