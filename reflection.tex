@@ -1,14 +1,14 @@
 Both attacks are entirely preventable. In the case of format string vulnerabilities, we simply suggest user-input
-strings should \emph{not} be done with {\tt printf(str)}, but rather with {\tt printf("\%s", str)}. The fact that {\tt
+strings should \emph{not} be printed with {\tt printf(str)}, but rather with {\tt printf("\%s", str)}. The fact that {\tt
 printf} is able to write to arbitrary memory addresses is also a problem. This is actually a useful feature of the
 function, allowing outputs to be aligned, for instance {\tt printf("\%s: \%n\%d\textbackslash n", "Next number",
 \&offset, 5); printf("\%*s\%s\textbackslash n", offset, "", "\textasciicircum This is the third prime!")} will align the
 {\tt \textasciicircum} character such that it points at the 5. Arguably, this behaviour isn't necessary, since the
 return value of {\tt printf} is the number of characters printed in the entire statement, so the functionality is
-replaceable, but removing functionality from any part of the C standard IO library is almost certainly a bad idea. Also,
+replaceable, but removing functionality from any part of the C standard library is almost certainly a bad idea. Also,
 regardless of how securely a program seems to have been written, user input should always be assumed dangerous until it
 has been checked. If for some reason the input must be passed directly to printf, it could be sanitised by either
-doubling up or removing all \% characters, but we see no circumstances under which this would actually be necessary.
+doubling up or removing all \% characters.
 
 Preventing stack-smashing attacks is a not a new problem, and there are three very effective classes of countermeasure:
 stack protectors (also known as canaries), ASLR (address space layout randomisation) and NX (non-executable) regions.
@@ -93,11 +93,18 @@ system. This knowledge is then leveraged in other attacks.
 
 
 For example, if this vulnerability exists alongside a buffer overflow, then the damage potential is significantly
-greater. In most situations, the presence of a stack canary nullifies the risk of a buffer overflow attack. Using a format
-string vulnerability an adversary can tear values from the stack in seach of this canary, and duplicate it at the start of their NOP sled.
-A program might feasibly prompt the user to input the name of a file, repeat that name back to the user, wait for anyone editing the file to stop, then open the file and read it into memory for editing. If this all happens in the same function with both a buffer overflow and a format string vulnerability
-present, an adversary can open a target file for editing with a name that contains several {\tt \%x} format specifiers. The program will prompt the adversary to enter this file name, and when it repeats it, the adversary can read off the value of the stack canary. The program will then block, waiting for the adversary to stop editing the file. The adversary places several duplicate canaries at the start of the file, then follows it with a standard NOP sled and closes the file. The program reads this file, and falls victim to the NOP sled, leaving the system open to whatever the
-adversary might want to do with it.
+greater. In most situations, the presence of a stack canary nullifies the risk of a buffer overflow attack. Using a
+format string vulnerability it is possible that an adversary could tear values from the stack in seach of this canary,
+and duplicate it at the start of their NOP sled. 
+% A program might feasibly prompt the user to input the name of a file,
+% repeat that name back to the user, wait for anyone editing the file to stop, then open the file and read it into memory
+% for editing. If this all happens in the same function with both a buffer overflow and a format string vulnerability %
+% present, an adversary can open a target file for editing with a name that contains several {\tt \%x} format specifiers.
+% The program will prompt the adversary to enter this file name, and when it repeats it, the adversary can read off the
+% value of the stack canary. The program will then block, waiting for the adversary to stop editing the file. The
+% adversary places several duplicate canaries at the start of the file, then follows it with a standard NOP sled and
+% closes the file. The program reads this file, and falls victim to the NOP sled, leaving the system open to whatever the
+% adversary might want to do with it. %Maybe we don't need the example? Save some characters
 
 Modern techniques have mitigated most risk from buffer overflow attacks, but they do not serve as a substitute for
 security-aware programming.
