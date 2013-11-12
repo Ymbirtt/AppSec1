@@ -10,40 +10,40 @@ regardless of how securely a program seems to have been written, user input shou
 has been checked. If for some reason the input must be passed directly to printf, it could be sanitised by either
 doubling up or removing all \% characters.
 
-Preventing stack-smashing attacks is a not a new problem, and there are three very effective classes of countermeasure:
+Stack-smashing is not a new threat, and there are three very effective classes of countermeasure:
 stack protectors (also known as canaries), ASLR (address space layout randomisation) and NX (non-executable) regions.
 Stack protectors are random values that are placed on the stack between the local variables of the running function and
 the return pointer of that stack frame. These randomly generated values are also stored elsewhere and the program will
 crash upon returning if the stored and stack values differ. Since clobbering the return pointer also clobbers the
 canaries, this countermeasure can quite effectively prevent alteration of return values. They are enabled by default in
 recent compilers, and must be explicitly disabled (GCC requires {\tt -fno-stack-protector}), which doesn't happen by
-accident. Stack protectors do not prevent the clobbering from occurring though; using {\tt strcpy} will copy data until
-it reaches a null byte. Since we can't be sure that a user-input string will contain a null byte before the end of the
-buffer, we should never use it to process user input. Instead, {\tt strncpy}, the safer version, should be used, which
+accident. Stack protectors do not prevent the actual clobbering though; using {\tt strcpy} will copy data until
+it reaches a null byte. Since we can't be sure that user input will contain a null byte before the end of the
+buffer, we shouldn't use {\tt strcpy}. Instead, {\tt strncpy}, the safer version, should be used, which
 stops after a given number of bytes. Various tools exist which discourage or circumvent the usage of unsafe functions.
 {\tt --DFORTIFY\_SOURCE=1}\cite{fort_source}, available in versions of GCC later than 4.0, will attempt to replace any
 unsafe functions with their safe equivalents. Including {\tt banned.h} from Microsoft\cite{banned} will cause programs
 to throw warnings on compilation if they attempt to use any unsafe functions. Lint utilities (such as {\tt splint})
 typically detect potential buffer overflows as well.
 
-ASLR, which is discussed in the labs themselves, simply offsets the application's allocated memory by a different
-amounteach time it runs. If the program can only be run a limited number of times, this makes the attack harder, but
-given knowledge of the architecture and multiple program runs an attacker can overcome this countermeasure, such as in
-Tim's attack where roughly 20,000 executions were needed before ASLR randomly aligned the memory spaces such that the
-address in the input file pointed to a valid location in the NOP block. This is different from the stack protectors, in
-that it is outside of the compiled program, and is performed by the operating system for all programs. It is typically
-enabled by default in all modern operating systems, though it has been added piece by piece to some systems, meaning
-that many attacks were still viable even after the invention of this countermeasure.\cite{wiki_aslr}
+ASLR, which is discussed in the labs themselves, simply offsets the application's allocated memory by a different amount
+each time it runs. If the program can only be run a limited number of times, this makes the attack harder, but not
+impossible, such as in Tim's attack where roughly 20,000 executions were needed before ASLR randomly aligned the memory
+spaces such that the address in the input file pointed to a valid location in the NOP block. This is different from the
+stack protectors, in that it is outside of the compiled program, and is performed by the operating system.
+It is typically enabled by default in all modern operating systems, though it has been added piece by piece to
+some, meaning that many attacks were still viable long after the invention of this countermeasure.\cite{wiki_aslr}
 
-Lastly, NX regions\cite{wiki_nx} are regions of memory that will never be considered as instructions, only data. If any
+Lastly, NX regions\cite{wiki_nx} are regions of memory that will never be considered as instructions, only data, 
+neatly stopping many illegal code executions. If any
 program attempts to run these areas, it will crash. Like ASLR, it is performed at an operating system level, but
 requires hardware support. Most modern processors support NX regions, areas of memory marked out as non-executable,
 causing a program to immediately crash if execution jumps to somewhere it shouldn't. Interestingly, Ubuntu 9.11 with
-thei386 architecture should have an emulation of this feature enabled by default\cite{nx_bit}. Not only that, but
+the i386 architecture should have an emulation of this feature enabled by default\cite{nx_bit}. Not only that, but
 reading the contents of {\tt /proc/cpuinfo} in the virtual machines gives details of the host machine's processor,
 neither of which runs the i386 architecture. Drum's machine ran an Intel i7 and Tim's ran an i5, both of which support
 NX bits as reflected by the contents of {\tt /proc/cpuinfo}. Presumably this was disabled on the VMs for the purposes of
-these labs. This feature, properly used, can neatly stop most code payloads from executing.
+these labs.
 
 Finally, a NOP sled involves executing a large number of NOP instructions. Very few programs become more efficient by
 using NOPs\cite{zip_quine}, and it is highly unlikely that a legitimate program will spend its processor time doing
