@@ -55,7 +55,7 @@ overwrite memory lower down (higher memory addresses) on the stack, such as the 
 
 Precisely engineering the return pointer to point exactly to the shellcode's location is often difficult. Though this
 would be possible in this example without memory randomization, where we have GDB and access to the source code, when
-memory address randomization is enabled it still becomes very difficult. A NOP sled gives us a larger target.
+memory address randomization is enabled it still becomes very difficult. Using a NOP sled gives us a larger target.
 We construct our sled generally as follows:
 
 An address which is somewhere earlier in the stack than the start of the current frame's return pointer is repeated
