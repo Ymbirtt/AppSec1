@@ -2,7 +2,7 @@
 Both attacks are entirely preventable, with remedies being extremely simple and indeed automatic in new cases.
 In the case of format string vulnerabilities, the entire issue can be avoided by not using user-provided content in
 any part of the format string. If this is required for some unknown reason, then careful parsing of the string 
-is needed beforehand, to guard against improper specifier usage. Tools such as {\tt Splint} can detect 
+is needed beforehand, to guard against improper specifier usage. Tools such as {\tt splint} can detect 
 this problem in a codebase\cite{splint_art}, and requiring programmers to pass static analysis will prevent most,
 if not all, occurences. We believe that the main reason this class of vulnerability exists is poor or lazy
 coding, and cracking down on that is the best method of prevention. The complexity of patching this problem can vary,
@@ -32,7 +32,7 @@ Presumably this was for the educational purposes of these labs.
 The common NOP sled is quite detectable in principle, so emulated execution of a program can use simple heuristics to determine
 if a basic sled is being deployed. Very few programs would have a legitimate reason for using multiple consecutive NOPS\cite{zip_quine},
 and we believe that is why Drum's metasploit-generated shellcode used a method of generating a NOP sled that didn't actually
-use NOP instructions - simply using regular instructions in a way that has no side-effects and does no practical work\cite{wiki_sled}.
+use NOP instructions -- simply using regular instructions in a way that has no side-effects and does no practical work\cite{wiki_sled}.
 
 All that aside, we believe the best defense is simply to educate programmers about the dangers of their software being attacked, and
 how they can design against it.
