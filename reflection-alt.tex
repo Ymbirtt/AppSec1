@@ -17,7 +17,7 @@ method of detecting stack smashing at the point of a function returning. If a sm
 Later versions of the C standard library and compilers also include a macro definition called {\tt FORTIFY\_SOURCE},
 which will attempt to automagically replace unsafe functions (such as {\tt strcpy}) with safer variants, such as 
 (such as {\tt strncpy})\cite{fort_source}. Microsoft also provide a header file, {\tt banned.h}, which will cause
-usage of unsafe functions to throw compile time errors\cite{banned}.
+usage of unsafe functions to throw compile time warnings\cite{banned}.
 
 We believe that lazy design is still a problem, but modern compilation toolchains provide excellent safeguards against
 casual mistakes which would have previously been highly dangerous. Further enhancements include ASLR (address space
