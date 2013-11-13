@@ -1,8 +1,20 @@
-To conclude, both programs are very faulty. Whilst the format string vulnerability doesn't cause major issues in
-isolation, the buffer overflow attack allows any user to gain root access to the system, which is a very serious
-problem. A format string vulnerability can, however, be used to nullify certain countermeasures against buffer
-overflows. The security flaws exposed here are caused by problems which good programming practice can completely
-prevent, but which still exist in real-world scenarios to this day. Though few new systems will be subject to these
-flaws, the cost of rebuilding a pre-existing system which already exhibits these flaws can be prohibitively high. For
-this reason, new programs should be built with security as a priority and thoroughly checked prior to deployment so a
-user needn't pay the excessive costs associated with a security breach.
+In conclusion, we believe there are 3 major points to take away: 
+
+\begin{itemize} 
+
+\item Binary exploits such as format string vulnerabilities and buffer overflows are not unavoidable by-products of
+computing. They can be prevented with sufficiently aware design. Educating programmers is the best approach, but for
+retroactive patching there are automated tools to make detection (and in many cases repair) of these vulnerabilities
+possible.
+
+\item Left unattended, these exploits can cause significant damage: even if they are prevented from hijacking a process
+by measures such as NX regions, they can still cause failures. In the real world, anything that causes mission-critical
+software to deviate from intended behaviour in any way can be disastrous.
+
+\item The preventative and curative measures we have discussed make problems immediately obvious to the developer when
+low-level languages are used, but as more and more software is developed in higher languages, and with larger libraries,
+it is becoming more important than ever to ensure new code is safe. Automatic measures can mitigate a lot of damage,
+but there is no substitute for security-aware programming.
+
+\end{itemize}
+
