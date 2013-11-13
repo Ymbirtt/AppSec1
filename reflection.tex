@@ -34,7 +34,7 @@ stack protectors, in that it is outside of the compiled program, and is performe
 It is typically enabled by default in all modern operating systems, though it has been added piece by piece to
 some, meaning that many attacks were still viable long after the invention of this countermeasure.\cite{wiki_aslr}
 
-Lastly, NX regions\cite{wiki_nx} are regions of memory that will never be considered as instructions, only data, 
+Lastly, NX regions\cite{wiki_nx} are regions of memory that will never be considered as instructions, only data,
 neatly stopping many illegal code executions. If any
 program attempts to run these areas, it will crash. Like ASLR, it is performed at an operating system level, but
 requires hardware support. Most modern processors support NX regions, areas of memory marked out as non-executable,
@@ -59,7 +59,7 @@ can, however, create detailed stack dumps, and thus the vulnerability can often 
 system. This knowledge can then be leveraged in other attacks. For example, if this vulnerability exists alongside a
 buffer overflow, then the damage potential is significantly greater. In most situations, the presence of a stack canary
 nullifies the risk of a buffer overflow attack. Using a format string vulnerability it is possible that an adversary
-could tear values from the stack in seach of this canary, and duplicate it at the start of their NOP sled.
+could tear values from the stack in search of this canary, and duplicate it at the start of their NOP sled.
 
 Modern techniques have mitigated most risk from buffer overflow attacks, but they do not serve as a substitute for
 security-aware programming.

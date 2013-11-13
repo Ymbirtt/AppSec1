@@ -12,7 +12,7 @@ showing the dangerous arrangement of a function's arguments and its caller's loc
 
 Format string functions are useful and powerful, but can be dangerous; Their intended use is along the line of {\tt
 printf("\%x", x)} which prints the value of the variable {\tt x} interpreted as a hexadecimal integer. However, {\tt
-printf} blindly trusts the format string to reflect the arguments. {\tt printf("\%x \%x \%x")} will print outthe values
+printf} blindly trusts the format string to reflect the arguments. {\tt printf("\%x \%x \%x")} will print out the values
 of whatever is stored at the memory locations where the $2^{nd}$, $3^{rd}$ and $4^{th}$ arguments to printf should be if
 they existed, without checking whether they exist or not. This means just using format specifiers we can start reading
 memory from the stack that doesn't belong in the current context. If, then, we call {\tt printf("\%s\%s...\%s")}, the
@@ -24,7 +24,7 @@ locations to 0x0, and again crash when it hits an invalid address.
 With the version of the program that requested an integer input, both our attacks used that input as the target address.
 In the subsequent version we both used the format string itself to determine where to write. In the first case, we
 simply supply the appropriate address in integer form, converted from the output printed by the program. This location
-is equivalent (when stack protectors are disabled) to where the 9th 4-byte argument to a printf call would sit. Thus
+is equivalent (when stack protectors are disabled) to where the $9^{th}$ 4-byte argument to a printf call would sit. Thus
 {\tt printf("\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%n")} will dig eight words from the stack to the integer input by the
 user, then set the value at that memory address to 64 = 0x40. Using another {\tt\%x} would read the data. You can also
 leverage positional argument syntax to directly investigate the stack without changing it, which Drum chose to implement
@@ -59,7 +59,7 @@ memory address randomization is enabled it still becomes very difficult. Using a
 We construct our sled generally as follows:
 
 An address which is somewhere earlier in the stack than the start of the current frame's return pointer is repeated
-(endian-ness accounted for, avoiding null bytes) several times until it would clobber the return address. Then a large
+(endianness accounted for, avoiding null bytes) several times until it would clobber the return address. Then a large
 series of no-operation instructions in precompiled bytecode is prepended to the shellcode, and this new blob is appended
 to the repeated addresses. Jumping the execution into any one of those NOPs will cause the program to slide down its own
 stack directly into the shellcode payload, making memory addresses much easier to guess.
@@ -74,5 +74,5 @@ syscall interrupt. Syscalls are parametrised exclusively by registers\cite{sysca
 which is passed as a parameter into {\tt setuid}. {\tt setuid(0)} sets the user id to 0, more commonly known as {\tt
 root}. When this call is placed before the code to launch a shell, the shell will be launched with root privileges.
 Assembling this and skimming over the bytecode, we find that prepending the payload with {\tt 0x31db8d4317cd80} will get
-the job done. Drum simply chose to delegate all shellcode generation to the metasploit framework, replacing the given
+the job done. Drum simply chose to delegate all shellcode generation to the Metasploit Framework, replacing the given
 shellcode entirely.
