@@ -12,12 +12,12 @@ showing the dangerous arrangement of a function's arguments and its caller's loc
 
 Format string functions are useful and powerful, but can be dangerous; Their intended use is along the line of {\tt
 printf("\%x", x)} which prints the value of the variable {\tt x} interpreted as a hexadecimal integer. However, {\tt
-printf} blindly trusts the format string to reflect the arguments. {\tt printf("\%x \%x \%x")} will print outthe values
+printf} blindly trusts the format string to reflect the arguments. {\tt printf("\%x \%x \%x")} will print out the values
 of whatever is stored at the memory locations where the $2^{nd}$, $3^{rd}$ and $4^{th}$ arguments to printf should be if
 they existed, without checking whether they exist or not. This means just using format specifiers we can start reading
 memory from the stack that doesn't belong in the current context. If, then, we call {\tt printf("\%s\%s...\%s")}, the
 program will tear values from the stack, interpret them as memory addresses that contain null-terminated strings, and
-attempt to deference and print them. This will segfault quickly as the program attempts to access unauthorised
+attempt to deference and print them. This will seg-fault quickly as the program attempts to access un-authorised
 addresses. Similarly {\tt printf("\%n\%n...\%n")} will tear addresses from the stack, dereference them, set those
 locations to 0x0, and again crash when it hits an invalid address.
 
