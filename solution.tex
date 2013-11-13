@@ -1,10 +1,10 @@
 \subsection{Attack 1, the Format String Vulnerability}
 
 The {\tt printf, fprintf, sprintf}, etc functions in the standard C IO library are all vulnerable to format string based
-attacks, which exploit the manner in which C handles calls to the class of functions they belong to: \textbf{variadic
-functions}\cite{vfunc}. When a function is called in the C programming language,\cite{call_conv} the exact actions are
-dependent on the specific processor architecture, compiler and operating system. In the case of the lab machines, the
-situation is similar to that depicted in figure \ref{fig_stack}.
+attacks, which exploit the manner in which C handles calls to variadic functions\cite{vfunc} -- functions with an
+indeterminate number of arguments. When a function is called in the C programming language,\cite{call_conv} the exact
+actions are dependent on the specific processor architecture, compiler and operating system. In the case of the lab
+machines, the situation is similar to that depicted in figure \ref{fig_stack}.
 
 \begin{figure}[ht] \centering \includegraphics[width = 0.65\textwidth]{./images/stack.jpg} \caption{An example stack,
 showing the dangerous arrangement of a function's arguments and its caller's local variables} \label{fig_stack}
@@ -19,20 +19,17 @@ memory from the stack that doesn't belong in the current context. If, then, we c
 program will tear values from the stack, interpret them as memory addresses that contain null-terminated strings, and
 attempt to deference and print them. This will seg-fault quickly as the program attempts to access un-authorised
 addresses. Similarly {\tt printf("\%n\%n...\%n")} will tear addresses from the stack, dereference them, set those
-locations to 0x0, and again crash when it hits an invalid address.
+locations to {\tt 0x0}, and again crash when it hits an invalid address.
 
 With the version of the program that requested an integer input, both our attacks used that input as the target address.
 In the subsequent version we both used the format string itself to determine where to write. In the first case, we
 simply supply the appropriate address in integer form, converted from the output printed by the program. This location
 is equivalent (when stack protectors are disabled) to where the $9^{th}$ 4-byte argument to a printf call would sit. Thus
 {\tt printf("\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%8x\%n")} will dig eight words from the stack to the integer input by the
-user, then set the value at that memory address to 64 = 0x40. Using another {\tt\%x} would read the data. You can also
+user, then set the value at that memory address to 64 = 0x40. Using another {\tt\%x} would read the data. One could also
 leverage positional argument syntax to directly investigate the stack without changing it, which Drum chose to implement
-in all of his attacks. Using that syntax, reading the ninth integer would look like this: {\tt printf("\%9\$8x")}, and
-writing to it would be {\tt printf("\%9\$n")}.
-
-Setting the address to large values like {\tt 0xd09f00d} can be very difficult, since this requires an exceptionally
-long string.
+in all of his attacks. Using that syntax, invoking {\tt printf("\%9\$8x")} would read the $9^{th}$ integer, and {\tt
+printf("\%9\$n")} would write to it.
 
 Both of our memory alteration attacks use the {\tt \%n} format specifier to write to an arbitrary value to the memory
 address of {\tt secret[1]}. For contrast we decided to use alternate methods of padding the format string to the correct
@@ -42,14 +39,15 @@ Drum's attack used a padding specifier to an unsigned integer format specifier, 
 allows for the writing of values less than the printed length of the smallest stack variable. Writing a value of 0 to
 {\tt secret[1]} without using this method and positional arguments is impossible. Tim's attack uses the more tried-and-
 tested approach of standard stack popping, meaning that the minimum writeable value is determined by the values in the
-stack and the width specifiers used when they are printed.
+stack and the width specifiers used when they are printed. In both cases, setting the address to large values like {\tt
+0xd09f00d} can be very difficult, since this requires an exceptionally long string.
 
 \subsection{Attack 2, riding the NOP Sled}
 
 The exploit we used is based on the standard NOP sled and stack smashing approach, where we clobber the stack in order
 to manipulate the return address of the current function. If the return pointer can be rewritten to point to the start
 of the bytecode provided in the lab, then the running program will execute the bytecode and turn itself into a shell.
-Unsafe string functions such as {\tt strcpy} will write strings past the end of their buffer, if not terminated,
+Unsafe string functions such as {\tt strcpy} will write poorly terminated strings past the end of their buffer
 regardless of how wide the buffer actually is. By writing a sufficiently long string, we can overflow the buffer and
 overwrite memory lower down (higher memory addresses) on the stack, such as the return pointer.
 
@@ -76,3 +74,4 @@ root}. When this call is placed before the code to launch a shell, the shell wil
 Assembling this and skimming over the bytecode, we find that prepending the payload with {\tt 0x31db8d4317cd80} will get
 the job done. Drum simply chose to delegate all shellcode generation to the Metasploit Framework, replacing the given
 shellcode entirely.
+

@@ -10,7 +10,7 @@ but the detection is straightforward and automatic.
 Similarly, in new code, buffer overflow situations can be easily avoided. They occur only where functions that ignore
 buffer sizes are used, and for almost all of these functions there are safe alternatives. Again, linter tools can detect
 many instances of this vulnerability, meaning that existing codebases in low-level languages can be patched. Preventing
-code from offering opportunities for buffer overflows at the compilation stage is now quite easy;  Stack protectors
+code from offering opportunities for buffer overflows at the compilation stage is now quite easy; stack protectors
 (also called canaries) are now compiled in automatically by default, and provide a very effective method of detecting
 stack smashing at the point of a function returning. If a smash is detected, then the program crashes. Later versions of
 the C standard library and compilers also include a macro definition called {\tt FORTIFY\_SOURCE}, which will attempt to
@@ -21,7 +21,7 @@ functions to throw compile time warnings\cite{banned}.
 We believe that lazy design is still a problem, but modern compilation toolchains provide excellent safeguards against
 casual mistakes which would have previously been highly dangerous. Further enhancements include ASLR (address space
 layout randomisation) and NX (non-executable) regions; they make placing code that can be executed much harder, and are
-enabled by default in modern operating systems and development toolchains\cite{wiki_aslr}\cite{wiki_nx}. It is
+enabled by default in modern operating systems and development toolchains\cite{wiki_aslr,wiki_nx}. It is
 interesting to note are that ASLR was added slowly in small steps to various systems, meaning that it didn't mitigate
 all attacks straight away. It is entirely software based, unlike NX regions, which require hardware support. Furthermore
 it seems that whilst Ubuntu 9.11 upwards, with the i386 architecture, should have an emulation of NX regions enabled by
@@ -30,19 +30,19 @@ purposes of these labs.
 
 The common NOP sled is quite detectable in principle, so emulated execution of a program can use simple heuristics to
 determine if a basic sled is being deployed. Very few programs would have a legitimate reason for using multiple
-consecutive NOPS\cite{zip_quine}, and we believe that is why Drum's metasploit-generated shellcode used a method of
-generating a NOP sled that didn't actually use NOP instructions -- simply using regular instructions in a way that has
-no side-effects and does no practical work\cite{wiki_sled}.
+consecutive NOPS\cite{zip_quine}, and we believe that is why Metasploit uses a method of generating a NOP sled that
+doesn't use NOP instructions, instead using regular instructions in a way that has no side-effects and does no practical
+work\cite{wiki_sled}.
 
 All that aside, we believe the best defense is simply to educate programmers about the dangers of their software being
 attacked, and how they can design against it.
 
 \subsection{Damage Potential}
 
-By itself, a format string vulnerability offers only limited opportunity for control flow execution, and typically
-relies on altering memory locations to affect the vulnerable program, rather than hijacking the process completely,
-though it is possible. You can, however, create detailed stack dumps, and thus the vulnerability can often serve to
-enhance knowledge of the system. This knowledge can then be leveraged in other attacks - for example, if this
+By itself, a format string vulnerability offers only limited opportunity for control flow modification, and typically
+relies on altering memory locations to affect the vulnerable program rather than hijacking the process completely.
+It is, however, possible to create detailed stack dumps, and thus the vulnerability can often serve to
+enhance knowledge of the system. This knowledge can then be leveraged in other attacks -- for example, if this
 vulnerability exists alongside a buffer overflow, then the damage potential is significantly greater. In most
 situations, the presence of a stack canary nullifies the risk of a buffer overflow attack. Using a format string
 vulnerability it is possible that an adversary could tear values from the stack in seach of this canary, and duplicate
